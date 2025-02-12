@@ -1,0 +1,243 @@
+---
+title: "Homework 3"
+author: "Kenna McQueen"
+date: "2025-02-13"
+output: pdf_document
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE, tidy=TRUE, message=FALSE, tidy.opts=list(width.cutoff=60))
+```
+
+UT EID: km55667
+
+Github Link:!!!!!!!!!!!!!!!!!!!!!!
+
+```{r, warning=FALSE}
+#Loading in needed libraries
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+```
+
+# **Problem 1**
+
+```{r}
+#Reading in the dataset for problem 1.
+gas<-read_csv("gasprices.csv")
+```
+
+## **Theory A**
+
+```{r}
+#Do 10000 bootstraps of the difference in means by if there is a competitor in sight or not.
+boot_gas_comp = do(10000)*diffmean(Price ~ Competitors, data=mosaic::resample(gas))
+
+#A histogram showing the bootstrapped distribution
+ggplot(boot_gas_comp) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution for Difference in Mean Gas Prices Based On Competitors in Sight", x="Difference in Mean", y="Frequency") + theme_minimal()+theme(plot.title = element_text(size = 10))
+
+conf_gas_comp=confint(boot_gas_comp, level = 0.95)
+```
+
+Do gas stations charge more if they lack direct competition in sight? With 95% confidence, the difference of mean price for regular, unleaded gas when there is competition in sight and when there is not any, is between `r round(conf_gas_comp$lower, 3)` and `r round(conf_gas_comp$upper, 3)` with an estimate of `r round(conf_gas_comp$estimate, 3)`. Because the interval leans lower, there can be a slight increase in price when there is no competition, however it is not a significant increase because there are still common occurrences of the gas being less when there is competition in sight. Based on this, with 95%, we have not found a significant change in price based on a lack of direct competition in sight.
+
+## **Theory B**
+
+```{r}
+#Do 10000 bootstraps of the linear regressions of price of gas based on income of the zipcode.
+boot_gas_income = do(10000)*lm(Price ~ Income, data=mosaic::resample(gas))
+
+#A graph showing the bootstrapped distribution with a linear regression line.
+ggplot(gas) + geom_jitter(aes(x=Income, y=Price))+labs(title="Relation of Gas Price and Income of Zipcode", x="Median Household Income(Dollars)", y="Gas Price(Dollars)")+theme_minimal()+geom_smooth(aes(x=Income, y=Price), method='lm')
+
+#Calculating a 95% confidence interval.
+conf_gas_income=confint(boot_gas_income, level = 0.95)
+conf_gas_income2=filter(conf_gas_income, name=="Income")
+```
+
+We are examining if a richer area(zip code with higher income) results in an increase in the price of gas. The slope of gas price versus median income is somewhere between `r conf_gas_income2$lower` and `r conf_gas_income2$lower` dollars of gas per dollars of income, each additional 100,000 dollars of median income results in between `r round(100000*conf_gas_income2$lower, 3)` and`r round(100000*conf_gas_income2$upper, 3)` dollars increase in the price of gas, with 95% confidence. This means that although there is a small increase, there is still an increase in the price of gas with an increase in the median household income based on this sample.
+
+## **Theory C**
+
+```{r}
+#Do 10000 bootstraps of the difference in means by if there is a stoplight or not.
+boot_gas_light = do(10000)*diffmean(Price ~ Stoplight, data=mosaic::resample(gas))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_gas_light) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution for Difference in Mean Gas Price If there is a Stoplight", x="Difference in Mean", y="Frequency")+theme_minimal()
+
+#95% confidence interval
+conf_gas_light=confint(boot_gas_light, level = 0.95)
+```
+
+We are examining if gas stations at stoplights charge more. Based on this data, the range of price of gas depending on if there is a stoplight, is `r round(conf_gas_light$lower, 3)` more with a stoplight to `r round(conf_gas_light$upper, 3)` dollars more when there is not a stoplight, with 95% confidence. Therefore, because the interval is approximately centered around zero, and contains a range of values both for and against this theory, there is no significant decrease based on this sample in the price of gas when there is a stoplight.
+
+## **Theory D**
+
+```{r}
+#Do 10000 bootstraps of the difference in means by if there is direct highway access.
+boot_gas_high = do(10000)*diffmean(Price ~ Highway, data=mosaic::resample(gas))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_gas_high) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution for Difference in Mean Gas Price If there is Direct Highway Access", x="Difference in Mean", y="Frequency")+theme_minimal()+theme(plot.title = element_text(size = 12))
+
+#95% confidence interval of the distribution.
+conf_gas_high=confint(boot_gas_high, level = 0.95)
+```
+
+Do gas stations with direct highway access charge more? The difference in price between gas stations on an off the highway is between `r round(conf_gas_high$lower, 3)` and `r round(conf_gas_high$upper, 3)`, with 95% confidence. Therefore, we are 95% confident of an increase in price with gas stations directly off the highway from this sample.
+
+## **Theory E**
+
+```{r}
+#Mutate the data to create a variable based on if Shell is the brand or not.
+gas_shell<-mutate(gas, Shell= ifelse(Brand=="Shell", "Y", "N"))
+
+#Do 10000 bootstraps of the difference in means by if there is direct highway access.
+boot_gas_shell = do(10000)*diffmean(Price ~ Shell, data=mosaic::resample(gas_shell))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_gas_shell) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution for Difference in Mean Gas Price If Shell is the Brand", x="Difference in Mean", y="Frequency")+theme_minimal()
+
+#95% confidence interval of the bootstrapped distribution.
+conf_gas_shell=confint(boot_gas_shell, level = 0.95)
+```
+
+Does Shell charge more than all other non-Shell brands? Shell charges more on average with a range of `r round(conf_gas_shell$lower, 2)` to `r round(conf_gas_shell$upper, 2)` dollars more expensive, with 95% confidence. While gas tends to be more expensive when the brand is Shell, we are not confident that this is always true because the range of values includes those showing the price of Shell being less than competitors. This presented with the negative lower range value. Therefore, with 95% confidence we can not determine for sure if Shell charges more for gas than other brands. 
+
+# **Problem 2**
+
+```{r}
+#Reading in the needed data.
+sclass<-read_csv("sclass.csv")
+```
+
+## **Part A**
+
+```{r}
+#Filtering the data to only include the year 2011 and 63 AMG trim.
+sclassA=filter(sclass, year==2011 & trim=="63 AMG")
+
+#Doing 10000 bootstraps of the data.
+boot_sclassA = do(10000)*mean(~mileage, data=mosaic::resample(sclassA))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_sclassA) + geom_histogram(aes(x=mean))+labs(title="Bootstrap Sampling Distribution of Mean Mileage of 2011 S-Class 63 AMGs", x="Mean", y="Frequency")+theme_minimal()
+
+#Computes a 95% confidence interval.
+conf_sclassA=confint(boot_sclassA, level = 0.95)
+```
+
+The range of average mileage for the 2011 S-Class 63 AMGs, based on this smaple, is from `r format(round(conf_sclassA$lower, 0), scientific = FALSE)` miles to `r format(round(conf_sclassA$upper, 0), scientific = FALSE)` miles with an estimate of `r format(round(conf_sclassA$estimate, 0), scientific = FALSE)`, with 95% confidence.
+
+## **Part B**
+
+```{r}
+#Filtering the data to only include the year 2014 and 550 trim as well as creating a new variable for is the color is black or not.
+sclass=mutate(sclass, isBlack= ifelse(color=="Black", TRUE, FALSE))
+sclassB=filter(sclass, year==2014 & trim=="550")
+
+#Doing 10000 bootstraps of the data.
+boot_sclassB = do(10000)*prop(~isBlack, data=mosaic::resample(sclassB))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_sclassB) + geom_histogram(aes(x=prop_TRUE))+labs(title="Bootstrap Sampling Distribution of Proportion of Black 2014 S-Class 550s", x="Proportion", y="Frequency")+theme_minimal()
+
+#Computes a 95% confidence interval.
+conf_sclassB=confint(boot_sclassB, level = 0.95)
+```
+
+The range of the proportion of 2014 S-Class 550s that were painted black is from `r round(conf_sclassB$lower, 2)*100`% to `r round(conf_sclassB$upper, 2)*100`% of the total 2014 S-Class 550s, with 95% confidence based on this sample.
+
+# **Problem 3**
+
+```{r}
+#Read in the needed dataset
+nbc<-read_csv("nbc_pilotsurvey.csv")
+```
+
+## **Part A**
+
+We are considering, based off the pilot episode, does the show "Living with Ed" or "My Name is Earl" make viewers happier. From a sample of viewers who watched the pilot episode, we will be considering the difference in average happiness ratings for these two shows on a scale from zero to five. Many bootstraps will be calculated to present a 95% confidence interval showing the distribution of average happiness ratings.
+
+```{r}
+#Filtering the dataset to only contain the needed shows.
+nbc_A<-filter(nbc, Show=="Living with Ed" | Show=="My Name is Earl")
+
+#Doing 10000 bootstraps of the data.
+boot_nbc_A = do(10000)*diffmean(Q1_Happy ~ Show, data=mosaic::resample(nbc_A))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_nbc_A) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution of Difference in Mean of Viewer Happiness Ratings", x="Difference in Mean", y="Frequency")+theme_minimal()
+
+#Computes a 95% confidence interval.
+conf_nbc_A=confint(boot_nbc_A, level = 0.95)
+```
+
+The difference in mean ratings is `r round(abs(conf_nbc_A$lower), 2)` higher for "My Name is Earl" to `r round(abs(conf_nbc_A$upper), 2)` higher for "Living with Ed", with 95% confidence. Because the interval contains values favoring both shows, one show is not significantly, consistently higher than the others. However, the range contains more values favoring "My Name is Earl", but it is not consistently favoring this show. Zero is contained in the interval so with 95% confidence, we can not declare that one show makes audiences happier than the other. 
+
+## **Part B**
+
+We will be considering if "The Biggest Loser" or "The Apprentice: Los Angeles" annoy viewers more. This will be done by observing a 95% confidence interval of a difference in means of a bootstrapped sample of viewers who watched the pilot episodes of these shows. The annoyance is found from a rating of 1-5 from the viewers, with 5 being the most annoyed.
+
+```{r}
+#Filtering the dataset to only contain the needed shows.
+nbc_B<-filter(nbc, Show=="The Apprentice: Los Angeles" | Show=="The Biggest Loser")
+
+#Doing 10000 bootstraps of the data.
+boot_nbc_B = do(10000)*diffmean(Q1_Annoyed ~ Show, data=mosaic::resample(nbc_B))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_nbc_B) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution of Difference in Mean of Viewer Annoyed Ratings", x="Difference in Mean", y="Frequency")+theme_minimal()
+
+#Computes a 95% confidence interval.
+conf_nbc_B=confint(boot_nbc_B, level = 0.95)
+```
+
+We are 95% confident that "The Biggest Loser" received higher annoyance ratings than "The Apprentice: Los Angeles" in a range from `r round(abs(conf_nbc_B$upper), 2)` to `r round(abs(conf_nbc_B$lower), 2)`. Since the interval contains values all aligning with the "The Biggest Loser" being more annoying, we are 95% confident, based on this sample, that viewers rated "The Biggest Loser" more annoying than "The Apprentice: Los Angeles".
+
+## **Part C**
+
+This will be examining what proportion of viewers find "Dancing with the Stars" to be confusing, based on the pilot episode. To calculate this, a 95% confidence interval will be created based on bootstrapped samples of the proportion to give the show a confusing rating of 4 or 5. A rating of 4 or 5 means the viewer either agreed or strongly agreed with the statement “I found this show confusing” while scores less than 4 mean the viewer did not find the show to be confusing..
+
+```{r}
+#Filtering the data to only include Dancing With the Stars and creating a variable to show if viewers found it confusing or not.
+nbc_C=filter(nbc, Show=="Dancing with the Stars")
+nbc_C=mutate(nbc_C, Confused= ifelse(Q2_Confusing=="4" | Q2_Confusing=="5", TRUE, FALSE))
+
+
+#Doing 10000 bootstraps of the data.
+boot_nbc_C = do(10000)*prop(~Confused, data=mosaic::resample(nbc_C))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_nbc_C) + geom_histogram(aes(x=prop_TRUE))+labs(title="Bootstrap Sampling Distribution of Proportion of Confused Viewers", x="Proportion", y="Frequency")+theme_minimal()
+
+#Computes a 95% confidence interval.
+conf_nbc_C=confint(boot_nbc_C, level = 0.95)
+```
+
+We are 95% confident that the percent of "Dancing with the Stars" viewers who find the show confusing is in a range of `r round(conf_nbc_C$lower, 2)*100`% to `r round(conf_nbc_C$upper, 2)*100`%. Therefore, based on this sample, a small but significant proportion of viewers found this show to  be confusing, with 95% confidence.
+
+# **Problem 4**
+
+We are examining the difference in the revenue ratio between the treatment(advertising on Google AdWords is paused) and control(typical advertising) designated market areas(DMAs). A smaller ratio for the treatment than the control result's suggests that the paid search was driving revenue because the ratio of revenue decreased without the paid advertising. To examine the affect of the advertising on revenue, the ratio of revenue after treatment to revenue before treatment was calculated for each DMA. Then, 10,000 bootstrapped samples of the difference in means between the treatment and control groups ratios' is calculated. From there, a 95% confidence interval is created to show the uncertainty and range of this bootstrapped sample.
+
+```{r}
+#Reading in the dataset.
+ebay<-read_csv("ebay.csv")
+
+#Mutating the data to find the ratio of after to before.
+ebay<-mutate(ebay, ratio=rev_after/rev_before)
+ebay<-mutate(ebay, treatment=ifelse(adwords_pause==1, TRUE, FALSE))
+
+#Doing 10000 bootstraps of the data for the difference in means of the two groups.
+boot_ebay = do(10000)*diffmean(ratio~treatment, data=mosaic::resample(ebay))
+
+#A histogram showing the bootstrapped distribution.
+ggplot(boot_ebay) + geom_histogram(aes(x=diffmean))+labs(title="Bootstrap Sampling Distribution of The Difference in Mean Ratios", x="Difference in Means", y="Frequency")+theme_minimal()
+
+#Computes a 95% confidence interval.
+conf_ebay=confint(boot_ebay, level = 0.95)
+```
+
+We can say with 95% confidence that the average ratio of revenue for the treatment group is `r round(abs(conf_ebay$upper), 3)` to `r round(abs(conf_ebay$lower), 3)` lower than the average ratio of revenue for the control group. This means that revenue with no Google AdWords is lower, with 95% confidence and based on this data, than with it. Therefore, revenue with the use of Google AdWords is increased, with 95% confidence, meaning it isn't a waste of money for Ebay.
