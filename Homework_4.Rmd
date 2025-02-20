@@ -1,0 +1,196 @@
+---
+title: "Homework 4"
+author: "Kenna McQueen"
+date: "2025-02-17"
+output: pdf_document
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE, tidy=TRUE, message=FALSE, tidy.opts=list(width.cutoff=60))
+```
+
+UT EID: km55667
+
+Github Link: [SDS315]!!!!!!!!!!!!!!!!!!!!!!!!!
+
+```{r, warning=FALSE}
+#Loading in needed libraries
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+library(kableExtra)
+
+#Chi-Squared Statistic Function used throughout the assignment.
+chi_squared_statistic = function(observed, expected) {
+  sum((observed - expected)^2 / expected)
+}
+```
+
+# **Problem 1: Iron Bank**
+
+Over the long run, securities trades from the Iron Bank are flagged at the same 2.4% baseline rate as that of other traders. A chi-squared test statistic was used to evaluate this difference in expected flags of 2.4% and the actual statistic of 70 out 0f 2021 trades flagged.
+
+```{r}
+#Defining the expected and observed counts as well as the number of counts and simulations.
+obs_counts1=c(flagged=70, not=1951)
+exp_prop1=c(flagged=.024, not=.976)
+num_counts1=2021
+num_sim1=100000
+
+#100000 null chi-squareds to compare too.
+chi1_sim = do(num_sim1)*{
+  sim_counts1 = rmultinom(1, num_counts1, exp_prop1)
+  this_chi1 = chi_squared_statistic(sim_counts1, num_counts1*exp_prop1)
+  c(chi1 = this_chi1)
+}
+
+#Histogram of distribution.
+ggplot(chi1_sim) + geom_histogram(aes(x=chi1),binwidth=.5)+labs(title="Chi-Squared Statistics of the SEC's Flagged Trade", x="Chi-Squared", y="Frequency") + theme_minimal()+theme(plot.title = element_text(size = 15))
+
+#The chi2 of the observation.
+chi1_obs=chi_squared_statistic(obs_counts1, exp_prop1*num_counts1)
+
+#Calculating the p-value
+p_v1=sum(chi1_sim >= chi1_obs)/100000
+```
+
+The p-value of our chi-squared statistic, `r round(chi1_obs, 3)`, in relation to the simulated chi-squareds, is `r p_v1`. The probability of observing a difference as extreme, or more, than the investigated difference is low meaning it is not common for trades to be flagged at the rate that the Iron Bank's trades were. Therefore, the trades from the Iron Bank are flagged at a rate significantly higher then the baseline 2.4% rate so investigation should take place.
+
+# **Problem 2: Health Inspections**
+
+The rate of Gourmet Bites health code violations align with the average baseline citation rate of 3% for restaurants in a city. To examine this, a comparison of the 8 out of 50 violations with the 3% baseline will be done by use of a chi-squared test statistic. This statistic will be compared to 100,000 simulated chi-squares of the baseline rate to discern if there is an irregularity with health code violation rates for Gourmet Bites.
+
+```{r}
+#Defining the expected and observed counts as well as the number of counts and simulations.
+obs_counts2=c(violations=8, safe=42)
+exp_prop2=c(violations=.03, safe=.97)
+num_counts2=50
+num_sim2=100000
+
+#100000 null chi2's to compare too.
+chi2_sim = do(num_sim2)*{
+  sim_counts2 = rmultinom(1, num_counts2, exp_prop2)
+  this_chi2 = chi_squared_statistic(sim_counts2, num_counts2*exp_prop2)
+  c(chi2 = this_chi2)
+}
+
+#Histogram of distribution.
+ggplot(chi2_sim) + geom_histogram(aes(x=chi2))+labs(title="Chi-Squared Statistics of the Health Code Violations", x="Chi-Squared", y="Frequency") + theme_minimal()+theme(plot.title = element_text(size = 15))
+
+#The chi2 of the observation.
+chi2_obs=chi_squared_statistic(obs_counts2, exp_prop2*num_counts2)
+
+#Calculating the p-value
+pv_2=sum(chi2_sim >= chi2_obs)/100000
+```
+
+The p-value of our chi-squared statistic, `r round(chi2_obs, 2)`, in relation to the simulated statistics using the expected proportion is `r pv_2`. The probability of a difference as extreme, or more, than the observed difference is a significantly low value. Therefore, the amount of violations for Gourmet Bites are not consistent with the expected 3% rate of violations and action should be taken.
+
+# **Problem 3: Jury Selection Bias**
+
+The distribution of jurors empaneled by this judge is not significantly different from the county’s population proportions. This will be examined with a null chi-squared distribution of the expected proportions of jurors based on the demographic breakdown. The observed chi-squared will be compared to the distribution of simulated differences to examine if the difference in juror selection by demographic is statistically significant.
+
+```{r}
+#Defining the expected and observed counts as well as the number of counts and simulations.
+obs_counts3=c(group1=85, group2=56, group3=59, group4=27, group5=13)
+exp_prop3=c(group1=.3, group2=.25, group3=.2, group4=.15, group5=.1)
+num_counts3=240
+num_sim3=100000
+
+#10000 chi2's to compare too.
+chi3_sim = do(num_sim3)*{
+  sim_counts3 = rmultinom(1, num_counts3, exp_prop3)
+  this_chi3 = chi_squared_statistic(sim_counts3, num_counts3*exp_prop3)
+  c(chi3 = this_chi3) # return a vector with names and values
+}
+
+#Histogram of distribution.
+ggplot(chi3_sim) + geom_histogram(aes(x=chi3),binwidth=1)+labs(title="Chi-Squared Statistics of Ethnic Distribution of Jurors", x="Chi-Squared", y="Frequency") + theme_minimal()+theme(plot.title = element_text(size = 15))
+
+#The chi2 of the observation.
+chi_3=chi_squared_statistic(obs_counts3, exp_prop3*num_counts3)
+
+#Calculating the p-value
+pv_3=sum(chi3_sim >= chi_3)/100000
+```
+
+The probability of finding a difference as extreme, or more extreme, than `r round(chi_3, 2)` is `r round(pv_3, 3)`. Therefore, it is not significantly unlikely to get a difference between the expected and observed ethnic group distribution that was observed for this Judge. The distribution of jurors differing from the demographic breakdown is not significant and therefore most likely occurred by chance. We could investigate this difference further by looking into more than just the 20 juries to see if there is a different trend with more data.
+
+# **Problem 4: LLM Watermarking**
+
+---
+
+```{r}
+#PART A
+#Reading in needed data and and sentences.
+letters<-read_csv("letter_frequencies.csv")
+file_path <- "brown_sentences.txt"
+brown_sentences <- readLines(file_path)
+
+#Cleaning the text to use by removing non-letters and converting to uppercase.
+clean_text<-gsub("[^A-Za-z]", "", brown_sentences)
+clean_text<-toupper(clean_text)
+
+#Function that will determine the chi-squared statistic for each sentence given.
+chi_squared_sentences<-function(sentence){
+  #Calculating the observed counts.
+  observed_counts = table(factor(strsplit(sentence, "")[[1]], levels = letters$Letter))
+  #Calculating the expected counts.
+  total_letters = sum(observed_counts)
+  expected_counts = total_letters * letters$Probability
+  #Calculation the chi-squared statistic.
+  chi_squared_stat=chi_squared_statistic(observed_counts, expected_counts)
+  return(chi_squared_stat)
+}
+
+#Create empty list to hold null chi-squareds
+null_chi_sq = rep(0, length(clean_text))
+#Looping through the sentences and storing the chi-squared for each in the empty list.
+for (i in 1:length(clean_text)){
+  null_chi_sq[i]=chi_squared_sentences(clean_text[i])
+}
+
+null_dist<-tibble(Chi_Sq=null_chi_sq)
+ggplot(null_dist) + geom_histogram(aes(x=Chi_Sq),binwidth=1)+labs(title="Null Chi-Squared Statistics Letter Distributions", x="Chi-Squared", y="Frequency") + theme_minimal()+theme(plot.title = element_text(size = 15))
+
+
+#PART B
+# Reading in the sentences to examine.
+sentences <- c(
+  "She opened the book and started to read the first chapter, eagerly anticipating what might come next.",
+  "Despite the heavy rain, they decided to go for a long walk in the park, crossing the main avenue by the fountain in the center.",
+  "The museum’s new exhibit features ancient artifacts from various civilizations around the world.",
+  "He carefully examined the document, looking for any clues that might help solve the mystery.",
+  "The students gathered in the auditorium to listen to the guest speaker’s inspiring lecture.",
+  "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland.",
+  "The chef demonstrated how to prepare a delicious meal using only locally sourced ingredients, focusing mainly on some excellent dinner recipes from Spain.",
+  "They watched the sunset from the hilltop, marveling at the beautiful array of colors in the sky.",
+  "The committee reviewed the proposal and provided many points of useful feedback to improve the project’s effectiveness.",
+  "Despite the challenges faced during the project, the team worked tirelessly to ensure its successful completion, resulting in a product that exceeded everyone’s expectations."
+)
+
+#Cleaning the sentences to use by removing non-letters and converting to uppercase.
+clean_sentences<-gsub("[^A-Za-z]", "", sentences)
+clean_sentences<-toupper(clean_sentences)
+
+#Creating a dataframe of the sentences and empty p-values.
+sentence_labels <- paste("Sentence", 1:10)
+p_v<-rep(0, 10)
+sentence_tibble<-tibble("Sentences"=sentence_labels, "PValues"=p_v)
+
+#Calculating the p-value based on the chi-squared value for each sentence.
+for (i in 1:10){
+  chi_sq<-chi_squared_sentences(clean_sentences[i])
+  pv=sum(null_chi_sq >= chi_sq)/56745
+  sentence_tibble$PValues[i]=round(pv, 3)
+}
+
+#Table showing the p-values.
+
+pv_tbl<-kbl(sentence_tibble, col.names=c("Sentence Number", "P-Value"), caption="P-Values of Chi-Squareds of Frequency of Letter Count between Sentences")
+pv_tbl
+```
+
+---
+
+The sentence produced by an LLM is sentence 6: "Feeling vexed after an arduous and zany day at work, she hoped for a peaceful and quiet evening at home, cozying up after a quick dinner with some TV, or maybe a book on her upcoming visit to Auckland." The probability that we would have a difference in expected and observed letter distribution of a sentence as extreme, or more, than what we observed for sentence six is 0.009. This is significantly lower than the p-values for the other sentences meaning that it is significantly less likely to have the letter distribution observed for sentence six. This is a sign of the LLM watermark we were trying to find meaning that sentence six is the LLM produced sentence.
