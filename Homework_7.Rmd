@@ -11,7 +11,7 @@ knitr::opts_chunk$set(fig.height=3, fig.width=4, echo=FALSE, fig.width=8, fig.he
 
 UT EID: km55667
 
-Github Link: [SDS315](!!!!!!!)
+Github Link: [SDS315](https://github.com/kmcqueen13/SDS315/blob/main/Homework_7.Rmd)
 
 ```{r, warning=FALSE}
 #Loading in needed libraries
