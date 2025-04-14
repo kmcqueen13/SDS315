@@ -1,0 +1,138 @@
+---
+title: "Homework 8"
+author: "Kenna McQueen"
+date: "2025-04-14"
+output: pdf_document
+---
+
+---
+title: "Homework 8"
+author: "Kenna McQueen"
+date: "2025-04-07"
+output: pdf_document
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE, tidy=TRUE, message=FALSE, tidy.opts=list(width.cutoff=60))
+```
+
+UT EID: km55667
+
+Github Link: [SDS315](!!!!!!!!!!!!!!!!!!!!!)
+
+```{r, warning=FALSE}
+#Loading in needed libraries
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+library(MatchIt)
+```
+
+# **Problem 1: Regression Warm Up**
+
+### **A)**
+
+```{r, results='hide'}
+#Reading in the data
+creatinine<-read_csv("creatinine.csv")
+
+#linear model of the data
+lm_creatinine<-lm(creatclear~age, data=creatinine)
+coef(lm_creatinine)
+```
+
+The expected creatinine clearance rate expected for a 55-year-old is 113.71 mL/min. The equation $Clearance Rate= 147.81-0.62 \cdot Age$, which was formed by a linear model of clearance rate by age, results in 113.72 when Age=55. 
+
+### **B)**
+
+Creatinine clearance decreases by 0.62 mL/minute per year of age. This was determined from a linear model of creatinine clearance by age. The weight of this model for age is -0.62.
+
+### **C)**
+
+```{r, results='hide'}
+#expected for the 40-year-old
+147.81-(0.62*40)
+#diff in actual-expected for 40 year old
+135-123.01
+
+#expected for the 60-year-old
+147.81-(0.62*60)
+#diff in actual-expected for 60 year old
+112-110.61
+```
+
+The expected rate given a persons' age is $Clearance Rate= 147.81-0.62 \cdot Age$. Using this, the expected rate of creatinine clearance for a 40-year-old is 123.01. Their actual rate is 135 so the difference, $Actual-Expected$, is $135-123.01=11.99$. The 40-year-old's creatinine clearance rate is 11.99 mL/min more than expected. 
+
+The expected rate of creatine clearance for a 60-year-old is 110.61. The difference between the actual rate of 112 mL/min and the expected rate is $112-110.61=1.39$. Their rate is 1.39 mL/min higher than expected for their age. 
+
+Therefore, the 40-year-old is healthier for their age because their rate is 11.99 mL/min higher than expected, given their age, which is a higher difference than the 60-year-old whose rate is only 1.39mL/min higher than expected for their age.
+
+# **Problem 2: Modeling Disease Growth**
+
+The file covid.csv contains data on daily reported COVID-19 deaths for Italy and Spain—two of the hardest-hit European countries—during the first pandemic wave in February and March of 2020. The columns in this data frame are:
+• date: the calendar date
+• country: Italy or Spain
+• deaths: the number of reported COVID-19 deaths in that country on that day
+• days_since_first_death: the number of days elapsed since the first death in that country
+
+Your task is to fit two exponential growth models, one for Italy and one for Spain, using days_since_first_death as the time variable. Use the results of your model to characterize the growth rate and doubling time of the daily death total in each country.
+
+Please include the following in your write-up:
+```{r, results="hide"}
+#Reading in the dataset
+covid<-read_csv("covid.csv")
+
+#An estimated growth rate and doubling time for Italy, with 95% bootstrapped confidence interval for each.
+italy_covid<-filter(covid, country=="Italy")
+
+lm_italy<-lm(log(deaths)~days_since_first_death, data=italy_covid)
+coef(lm_italy)
+
+boot_italy = do(10000)*lm(log(deaths) ~ days_since_first_death, data=resample(italy_covid))
+confint( boot_italy, level = 0.95)
+
+double_italy=mutate(boot_italy, double=70/(days_since_first_death*100))
+doubling_italy <- quantile(double_italy$double, c(0.025, 0.975))
+
+#An estimated growth rate and doubling time for Spain, with 95% bootstrapped confidence intervals for each.
+spain_covid<-filter(covid, country=="Spain")
+
+lm_spain<-lm(log(deaths)~days_since_first_death, data=spain_covid)
+coef(lm_spain)
+
+boot_spain = do(10000)*lm(log(deaths) ~ days_since_first_death, data=resample(spain_covid))
+confint(boot_spain, level = 0.95)
+
+double_spain=mutate(boot_spain, double=70/(days_since_first_death*100))
+doubling_spain <- quantile(double_spain$double, c(0.025, 0.975))
+```
+
+```{r}
+#A line graph showing reported daily deaths over time (using days_since_first_death, rather than calendar date, as the relevant time variable) in each country. Your line graph should have two lines, one for each country, distinguished by their color.
+ggplot(covid)+geom_line(aes(x=days_since_first_death, y=log(deaths), color=country))+theme_minimal()+labs(color="Country", x="Days Since First Death", y="Log of Death Count", title="Death Counts by Days Since First Death")
+```
+
+```{r}
+ggplot(covid, aes(x=days_since_first_death, y=log(deaths), color=country)) + 
+  geom_smooth(method='lm')+theme_minimal()+labs(color="Country", x="Days Since First Death", y="Log of Death Count", title="Linearized Death Counts by Days Since First Death")
+```
+
+The linearized equation for exponential growth is $log(death)=log(\alpha)+\beta \cdot days$, in exponential form it is $death=\alpha \cdot e^{\beta \cdot days}$. 
+
+Using these equations for the death rate in Italy, we get $log(death)=1.019+0.183 \cdot days$ which gives $death= 2.77 \cdot e^{0.183 days}$. Therefore, the estimated growth rate for deaths from Covid in Italy is 0.183 days/log(death). We are 95% confident that the the growth rate is between 0.159 and 0.208. The doubling time for Covid cases is $70/18.3$ which is 3.8 days. A confidence interval at 95% produces an interval from 3.4 to 4.4 days.
+
+Using these equations for the death rate in Spain, we get $log(death)=0.465+0.276 \cdot days$ which gives $death= 1.59 \cdot e^{0.276 days}$. Therefore, the estimated growth rate for deaths from Covid in Spain is 0.276 days/log(death). We are 95% confident that the the growth rate for Covid cases in Spain is between 0.235 and 0.317. The doubling time for this is $70/27.3$ which is 2.5 days. We are 95% confident that the doubling time for Covid cases in Spain is between 2.2 and 3.0 days.
+
+# **Problem 3: Price Elasticity of Demand**
+
+```{r, results='hide'}
+milk<-read_csv("milk.csv")
+
+lm_milk = lm(log(sales) ~ log(price), data=milk)
+coef(lm_milk)
+
+boot_milk = do(10000)*lm(log(sales) ~ log(price), data=resample(milk))
+confint(boot_milk, level = 0.95)
+```
+
+The fitted equation on the log scale is $log(Q)=4.72-1.62 \cdot log(P)$ where Q is the sales(quantity demanded) and P is the price. In the power-law model it is $Q=112.2 \cdot P^{-1.26}$. Therefore, the price elasticity of demand for this sample is -1.62. A 95% confident interval for the price elasticity of demand is -1.77 to -1.45. We are 95% confident that when the price of milk increases by 1%, consumers want to buy between 1.77% and 1.45% less of it, on average.
