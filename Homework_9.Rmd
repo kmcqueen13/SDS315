@@ -1,0 +1,180 @@
+---
+title: "Homework 9"
+author: "Kenna McQueen"
+date: "2025-04-21"
+output: pdf_document
+---
+
+```{r global_options, echo=FALSE}
+knitr::opts_chunk$set(fig.height=3, fig.width=4, echo=FALSE, fig.width=8, fig.height=5, warning=FALSE, tidy=TRUE, message=FALSE, tidy.opts=list(width.cutoff=60))
+```
+
+UT EID: km55667
+
+Github Link: [SDS315](!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
+
+```{r, warning=FALSE}
+#Loading in needed libraries
+library(tidyverse)
+library(mosaic)
+library(ggplot2)
+library(MatchIt)
+library(moderndive)
+library(effectsize)
+library(kableExtra)
+```
+
+# **Problem 1: Manufacturing flaws in circuit boards**
+
+```{r}
+solder<-read_csv("solder.csv")
+```
+
+### **Part A**
+
+```{r}
+#Graph for size of solder gun relation to number of skips
+ggplot(solder)+geom_boxplot(aes(y=skips, x=Opening))+theme_minimal()+labs(x="Size of Opening", y="Number of Skips", title="Size of Opening Related to Number of Skips")
+```
+
+The median number of skips, and overall distribution, increases as the size of the opening gets smaller. This suggests that as the opening size decreases, the number of skips increases. L means a large opening, M is medium opening, ans S is a small opening.
+
+```{r}
+#Graph for thickness of the alloy related to number of skips
+ggplot(solder)+geom_boxplot(aes(y=skips, x=Solder))+theme_minimal()+labs(x="Thickness of Alloy", y="Number of Skips", title="Thickness of Alloy Related to Number of Skips")
+```
+
+The number of skips tends to be higher when the alloy is thin than when it is thick. The maximum number of skips with a thick alloy is 30 while the maximum with a thin alloy is 48 and the median number for a thick alloy is also lower than for the thin.
+
+### **Part B**
+
+```{r, results='hide'}
+#Linear model with skips as the outcome variable
+lm_solder<-lm(skips~Opening+Solder+Opening:Solder, data=solder)
+
+coef(lm_solder)
+confint(lm_solder)
+```
+
+```{r}
+#Creating a table to display information
+solder_tbl <- data.frame(Coefficient = c("Intercept", "Medium Opening", "Small Opening", "Thin Soldering", "Medium Opening:Thin Solder", "Small Opening:Thin Solder"), Estimate = c(0.39, 2.41, 5.13, 2.28, -0.74, 9.65), LowerBound = c(-0.63, 0.96, 3.68, 0.84, -2.78, 7.61), UpperBound = c(1.41, 3.85, 6.57, 3.72, 1.30, 11.70))
+
+table=kbl(solder_tbl, col.names= c("Coefficent", "Estimate", "Lower-Bound", "Upper-Bound"))
+table <- kable_styling(table, latex_options = "HOLD_position")
+table
+```
+
+### **Part C**
+
+*Intercept:* The baseline number of skips when the alloy is thick and the opening is large is 0.39.
+
+*OpeningM:* The main effect of when the opening is medium, in isolation, is 2.41 more skips than the baseline.
+
+*OpeningS:* The isolated main effect of the opening when it is small is 5.13 more skips.
+
+*SolderThin:* The isolated main effect of the soldering when it is thin is 2.28 more skips than the baseline.
+
+*OpeningM:SolderThin:* The number of solder skips when both the opening is medium and the alloy is thin is -0.74 more than the individual effects of these two properties.
+
+*OpeningS:SolderThin:* The number of solder skips when both the opening is small and the alloy is thin is 9.65 more than the individual effects of these two properties.
+
+### **Part D**
+
+I would recommend using a thick alloy and the opening is large. This is because with the regression model, the smallest outcome, number of skips, occurs when medium opening, and large opening, and thin alloy are set to zero. This will mean that only the intercept is left which is when the alloy is thick and the opening is large.
+
+# **Problem 2: Grocery store prices**
+
+### **Part A**
+
+```{r}
+#read in dataset
+groceries<-read_csv("groceries.csv")
+
+#Wrangle data for plotting
+groceries_avg_price<-summarize(group_by(groceries, Store), avg_price=mean(Price))
+
+#bar graph for price differences among stores
+ggplot(groceries_avg_price)+geom_col(aes(x=Store, y=avg_price))+coord_flip()+theme_minimal()+labs(x="Store", y="Average Price (Dollars)", title="Average Price of Products by Store")
+```
+
+The average price of every product is between \$2 and \$4. Fiesta has the lowest average price of products and Whole Foods has the highest average price. The mean average price across stores is \$`r round(mean(groceries_avg_price$avg_price), 2)` and the standard deviation is \$`r round(sd(groceries_avg_price$avg_price), 2)`.
+
+### **Part B**
+
+```{r fig.height=6, fig.width=6}
+#data wrangling for occurances of each products
+groceries_product_count<-summarize(group_by(groceries, Product), count=n())
+
+#bar graph for number of stores with each product
+ggplot(groceries_product_count)+geom_col(aes(x=Product, y=count))+coord_flip()+theme_minimal()+labs(x="Product", y="Number of Stores with the Product", title="Number of Stores with a Product for Each Product")+theme(plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+Milk and Eggs were in the most stores(16). Lucky Charms, Frosted Flakes, Tortilla Chips, and Cinnamon Toast Crunch were in 4 stores which was the fewest number. The average number of occurrences of products is `r mean(groceries_product_count$count)` stores with a standard deviation of `r round(sd(groceries_product_count$count),2)` occurrences.
+
+### **Part C**
+
+```{r, results='hide'}
+#Model for Price versus Product and the Type of store
+groceries$Type <- factor(groceries$Type, levels = c("Grocery", "Convenience", "High-end Grocery", "Natural", "Small Format"))
+lm1_groceries<-lm(Price~Product+Type, data=groceries)
+round(confint(lm1_groceries),2)
+```
+
+Compared with ordinary grocery stores (like Albertsons, HEB, or Krogers), convenience stores charge somewhere between 0.41 and 0.91 dollars more for the same product.
+
+### **Part D**
+
+```{r, results='hide'}
+#Model for Price versus Product and Store
+lm2_groceries<-lm(Price~Product+Store, data=groceries)
+confint(lm2_groceries)
+coef(lm2_groceries)
+```
+
+The two stores that seem to charge the lowest prices when comparing the same product is Kroger Fresh Fare and Walmart. We are 95% confident that Kroger Fresh Fare charges between 0.44 to 1.36 less than Albertsons, with a coefficient of -0.70, and Walmart charges between 0.53 to 1.45 less than Albertsons, with a coefficient of -0.99.
+
+The two stores that seem to charge the highest prices when comparing the same products are Wheatsville Food Co-op and Whole Foods. We are 95% confident that Wheatsville Food Co-op charges between -0.06 and 0.64 more than Albertsons, with a coefficient of 0.29, and Whole Foods charges between 0.02 and 0.71 more than Albertsons, with a coefficient of 0.36. In this model, Albertsons has the baseline price.
+
+### **Part E**
+
+Central Market does charge slightly more than HEB, but it is still a small difference therefore these two stores charge a similar amount for the same product. HEB charges \$0.64 less than Albertsons while Central Market charges \$0.57 less than Albertsons for the same product. This means that Central Market charges \$0.08 more than HEB for the same product. This difference is larger than that between HEB and Store fiesta and Kroger where it is approximately $0.05 cheaper to shop at Store Fiesta or Kroger than at HEB. However, all other differences are larger than this. Compared to the difference in prices in HEB and Central Market to other stores, the difference between HEB and Central Market is not large. Therefore, while there is a difference in price, it is not relatively large.
+
+### **Part F**
+
+```{r, results='hide'}
+#Create the Income10K variable
+groceries<-mutate(groceries, Income10K=Income/10000)
+
+#Run a linear regression for price versus product and income10K
+lm3_groceries<-lm(Price~Product+Income10K, data=groceries)
+coef(lm3_groceries)
+
+standardize_parameters(lm3_groceries)
+```
+
+People in poorer ZIP codes pay more because of the negative coefficient on Income10K. As the the average income of a ZIP code increases by $10,000, the price decreases by -0.01 dollars. Therefore areas with a higher average income pay less for the same product.
+
+A one-standard deviation increase in the income of a ZIP code seems to be associated with a -0.03 standard-deviation change in the price that consumers in that ZIP code expect to pay for the same product.
+
+# **Problem 3: redlining**
+
+### **A. ZIP codes with a higher percentage of minority residents tend to have more FAIR policies per 100 housing units.**
+
+This statement is True. This is from the positive slope relating the amount of FAIR policies to the percentage of minority residents in figure A1 and the positive coefficient of 0.014 in the linear model between the number of policies and percent of minorities in the population. This trend is supported.
+
+### **B. The evidence suggests an interaction effect between minority percentage and the age of the housing stock in the way that these two variables are related to the number of FAIR policies in a ZIP code.**
+
+This statement is false. While there is an association between minority percentage and the age of the housing stock, as shown in figure B1, there is not enough information to suggest an interaction. This is because we don't know percent minority's effect on the amount of FAIR policies. To determine if an interaction is needed, a confidence interval of a linear model of FAIR policies with coefficients of percent minority and age both with and without an interaction. If the interaction proves to be statistically and practically significant on the model, then the interaction effect is needed.
+
+### **C. The relationship between minority percentage and number of FAIR policies per 100 housing units is stronger in high-fire-risk ZIP codes than in low-fire-risk ZIP codes.**
+
+This statement is false. From figure C1, the slope between FAIR policies and percent minority by high and low fire risk looks similar meaning that there is no obvious stronger relationship with high-fire-risk ZIP codes. Additionally, the coefficient for the interaction between minority and low fire risk is -0.001 and the 95% confidence interval is -0.012 to 0.01. This shows a slightly lower slope, or relationship, when the ZIP code is low fire risk. However, the estimate is small and the interval is almost centered on zero meaning that with 95% confidence, we can not claim that there is a stronger relationship for high fire risk zones. Because there is a coefficient, there may be a relationship but we can not be confident of it based on our interval. To be true, the confidence interval of htis relationship should be both statistically and practically significant.
+
+### **D. Even without controlling for any other variables, income “explains away” all the association between minority percentage and FAIR policy uptake.**
+
+This statement is false. Income does explain away some of the association between minority percentage and FAIR policy uptake as the model between policies and minority has a coefficient of 0.014 and the coefficient for minority when income is added into the model is 0.01. While the relationship is less, is is not entirely gone as a confidence interval at 95% suggests that this coefficient is between 0.004 and 0.015. Therefore, the relationship is not entirely explained away. For this statement to be true, when income is added into a model, the relationship between minority percentage and FAIR policies should be statistically and practically insignificant based on a 95% confidence interval.
+
+### **E. Minority percentage and number of FAIR policies are still associated at the ZIP code level, even after controlling for income, fire risk, and housing age.**
+
+This statement is true. In the model that controls for income, fire risk, and housing age still has a coefficient for minority of 0.008. A 95% confidence interval results in this coefficient being between 0.003 and 0.014 95% of the time. Therefore, there is a relationship in the model between the minority percentage and the number of FAIR policies.
